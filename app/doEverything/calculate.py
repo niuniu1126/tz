@@ -73,8 +73,11 @@ class cal:
 
     # TODO 计算分配个股数量
     def cal_every_stock(self, total_money: float):
+        t_money = total_money
+        ndf = pd.DataFrame()
+        fdf = pd.DataFrame()
         df = self.realtime_stock()
-        ndf = df.drop(columns=['trade_date', 'pe'])
+        df = df.drop(columns=['trade_date', 'pe'])
         """合计列"""
         sum_price = df['price'].sum()
         every_stock = total_money / sum_price
@@ -82,13 +85,42 @@ class cal:
         if every_stock < 100:
             e_stock = 100
         else:
+            """四舍五入购买股票数量 计算超过100股 
+            例: 不足150股时按照100股计算超过150时按照200股计算"""
             e_stock = round(every_stock / 100) * 100
-        for index, cow in ndf.iterrows():
-            buy = cow['price'] * e_stock
-            ndf.loc[index, 'buy_stock', 'buy_price'] = [index, e_stock, buy]
-        return every_stock
+        for index, row in df.iterrows():
+            buy = row['price'] * e_stock
+            row['buy_stock'] = e_stock
+            row['buy_price'] = buy
+            t_money = t_money - buy
+            if t_money > 0:
+                ndf = ndf.append(row, ignore_index=True)
+
+        total = total_money - ndf['buy_price'].sum()
+
+        if total > 0:
+            for id, row in df.iterrows():
+                cdf = ndf[ndf['symbol'] == row['symbol']]
+                if cdf.empty:
+                    buy = row['price'] * e_stock
+                    if buy <= total:
+                        row['buy_stock'] = e_stock
+                        row['buy_price'] = buy
+                        fdf = fdf.append(row, ignore_index=True)
+
+            if fdf.empty:
+                t_price = ndf.loc[0]['buy_price'] + total
+                h_stock = t_price / ndf.loc[0]['price']
+                b_stock = round(h_stock / 100) * 100
+                ndf.loc[0, ['buy_stock']] = b_stock
+                ndf.loc[0, ['price']] = b_stock * ndf.loc[0]['price']
+
+        ndf = pd.concat([ndf, fdf], ignore_index=True)
+        return ndf
 
 
 if __name__ == '__main__':
-    dn = cal().cal_every_stock(10000)
+    dn = cal().cal_every_stock(36000)
+    total = dn['buy_price'].sum()
     print(dn)
+    print(35000 - total)
