@@ -120,8 +120,12 @@ class cal:
         ndf = pd.concat([ndf, fdf], ignore_index=True)
         return ndf
 
-    # TODO 优选单个股票
+    # TODO 筛选新个股
     def single_choose_stock(self, choose_code_list: list = None, lines: int = None):
+        """
+            choose_code_list 排除已选股票数
+            lines 需要返回个股数量
+        """
         choose_df = self.realtime_stock(user_code_list=choose_code_list, lines=lines)
         return choose_df
 
