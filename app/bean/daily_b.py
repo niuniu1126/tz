@@ -3,6 +3,8 @@ class daily(object):
     def __init__(self, code):
         self.ts_code = code
         self.name = None  # 股票名称
+        self.industry = None  # 版块
+        self.symbol = None  # 股票交易码
         self.trade_date = None  # 交易日期
         self.open = None  # 开盘价
         self.close = None  # 当日收盘价
@@ -14,4 +16,5 @@ class daily(object):
         self.pe = None  # 市盈率（总市值/净利润）
         self.pe_ttm = None  # 市盈率（TTM）
         self.pb = None  # 市净率（总市值/净资产）
+        self.bps = None  # 每股净资产
 

@@ -1,6 +1,6 @@
 import pandas as pd
 import tushare as tuShare
-
+import datetime
 # df = pd.DataFrame(columns=['a', 'b', 'C', 'D', 'e'])
 #
 # for i in range(1, 100):
@@ -22,13 +22,22 @@ from app.tData.RedisDB import RedisBase
 # print(df)
 
 # stock_data = get_skData().stock_b()
-# df_bytes = t_util.dataFrame_to_bytes(stock_data)
-# # df_bytes = stock_data.to_msgpack()
+
 # flag = RedisBase().redis().set('stock_base', df_bytes)
+# df = t_util.bytes_to_dataFrame(RedisBase().redis().get('stock_base'))
 
-df = t_util.bytes_to_dataFrame(RedisBase().redis().get('stock_base'))
+# date:日期YYYY-MM-DD，默认为上一个交易日，目前只能提供2016-08-09之后的历史数据
+stock_basics = tuShare.get_stock_basics('2020-02-28')
+df = stock_basics.loc['000732']
+start = datetime.datetime.now()
+# daily_data = t_util.bytes_to_dataFrame(RedisBase().redis().get('stock_daily'))
+# stock_data = t_util.bytes_to_dataFrame(RedisBase().redis().get('stock_base'))
+stock_details_daily = t_util.bytes_to_dataFrame(RedisBase().redis().get('stock_details_daily'))
+end = datetime.datetime.now()
+print('Running time: %s Seconds' % (end-start))
 
-print(df)
-
-r = 100 / 100
-print(round(r))
+# print(daily_data)
+print(stock_details_daily)
+# print(daily_data)
+# r = 100 / 100
+# print(round(r))

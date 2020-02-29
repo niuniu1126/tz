@@ -4,65 +4,68 @@ from app.tData.getStockData import get_skData
 import pandas as pd
 from app.tData.RedisDB import RedisBase
 import app.appUtil.Util_tools as t_util
+import datetime
+
 
 class cal:
 
     def __init__(self):
         """Redis 数据初始化，取股票基本数据"""
-        self.stock_data = t_util.bytes_to_dataFrame(RedisBase().redis().get('stock_base'))
-        self.daily_data = t_util.bytes_to_dataFrame(RedisBase().redis().get('stock_daily'))
+        # self.stock_data = t_util.bytes_to_dataFrame(RedisBase().redis().get('stock_base'))
+        # self.daily_data = t_util.bytes_to_dataFrame(RedisBase().redis().get('stock_daily'))
+        self.stock_details_daily = t_util.bytes_to_dataFrame(RedisBase().redis().get('stock_details_daily'))
+        """高危版块"""
+        self.list_industry = config.industry.split('|')
 
     # TODO 根据规则筛选并查询数据
-    def _filter(self):
+    def _filter(self, daily_data, user_ts_code_list: list = None):
         dfNew = pd.DataFrame()
-        for index, row in self.stock_data.iterrows():
-            df = self.daily_data[self.daily_data['ts_code'] == row['ts_code']]
-            list_industry = config.industry.split('|')
-            if df.empty is False:
-                if 'ST' in row['name']:  # 排除带有ST的股票
-                    continue
-                df.fillna(value=0)  # 当数据中存在NaN时候用 0 替换
-                if row['industry'] in list_industry:
-                    bp_ulist = config.bh_.split(',')
-                else:
-                    bp_ulist = config.bf_.split(',')
-                daily_b.ts_code = str(row['ts_code'])  # 股票代码
-                daily_b.name = str(row['name'])  # 股票名称
-                for rw in df['trade_date']:
-                    daily_b.trade_date = str(rw)  # 交易日期
-                daily_b.close = float(df['close'])  # 当日收盘价
-                daily_b.pe = float(df['pe'])  # 市盈率（总市值/净利润）
-                daily_b.pe_ttm = float(df['pe_ttm'])  # 市盈率（TTM）
-                daily_b.pb = float(df['pb'])  # 市净率（总市值/净资产）
 
-                bp_low = float(bp_ulist[0])  # 市净率 最小值
-                bp_high = float(bp_ulist[1])  # 市净率 最大值
+        """排除已选择的数据"""
+        if user_ts_code_list is not None:
+            self.stock_details_daily = \
+                self.stock_details_daily[~self.stock_details_daily['ts_code'].isin(user_ts_code_list)]
 
-                if bp_low < daily_b.pb < bp_high:  # 市盈率 市净率的10倍
-                    pe_ttm_high = daily_b.pb * 10
-                    if 0 < daily_b.pe_ttm < pe_ttm_high:
-                        data = {'ts_code': daily_b.ts_code, 'symbol': row['symbol'], 'name': daily_b.name,
-                                'industry': row['industry'], 'trade_date': daily_b.trade_date, 'pe': daily_b.pe,
-                                'pe_ttm': daily_b.pe_ttm, 'pb': daily_b.pb}
-                        add_data = pd.Series(data)
-                        """ignore_index=True,表示不按原来的索引，从0开始自动递增"""
-                        dfNew = dfNew.append(add_data, ignore_index=True)
+        for index, row in self.stock_details_daily.iterrows():
+            """市净率选择"""
+            if row['industry'] in self.list_industry:
+                bp_ulist = config.bh_.split(',')
+            else:
+                bp_ulist = config.bf_.split(',')
+
+            bp_low = float(bp_ulist[0])  # 市净率 最小值
+            bp_high = float(bp_ulist[1])  # 市净率 最大值
+
+            if bp_low < row['pb'] < bp_high:  # 市盈率 市净率的10倍
+                pe_ttm_high = row['pb'] * 10
+                if 0 < row['pe_ttm'] < pe_ttm_high:
+                    """ignore_index=True,表示不按原来的索引，从0开始自动递增"""
+                    dfNew = dfNew.append(row, ignore_index=True)
         return dfNew
 
     # TODO 对数据进行排序
-    def _sort(self):
+    def _sort(self, user_code_list: list = None, lines: int = None):
         # df.sort_index(by='pb', axis=0, ascending=[True])
-        df = self._filter()
+        df = self._filter(self.stock_details_daily, user_ts_code_list=user_code_list)
         if df.empty is False:
-            max_lines = int(config.max_lines)
+            if lines is None:
+                max_lines = int(config.max_lines)
+            else:
+                max_lines = lines
+            """排序"""
             sort_title = config.sort_title.split('|')
             sort_type = config.sort_type.split('|')
             ndf = df.sort_values(by=sort_title, ascending=sort_type).head(max_lines)
         return ndf
 
+    # TODO 对最终筛选股票
+    def choose_stock(self, user_code_list: list = None, lines: int = None):
+        df = self._sort(user_code_list=user_code_list, lines=lines)
+        return df
+
     # TODO 获得当前股价
-    def realtime_stock(self):
-        df = self._sort()
+    def realtime_stock(self, user_code_list: list = None, lines: int = None):
+        df = self._sort(user_code_list=user_code_list, lines=lines)
         if df.empty is False:
             stock_list = df['symbol'].tolist()
             data = get_skData.get_realtime_stock(stock_list)
@@ -72,11 +75,11 @@ class cal:
         return df
 
     # TODO 计算分配个股数量
-    def cal_every_stock(self, total_money: float):
+    def cal_every_stock(self, total_money: float, user_code_list: list = None, lines: int = None):
         t_money = total_money
         ndf = pd.DataFrame()
         fdf = pd.DataFrame()
-        df = self.realtime_stock()
+        df = self.realtime_stock(user_code_list=user_code_list, lines=lines)
         df = df.drop(columns=['trade_date', 'pe'])
         """合计列"""
         sum_price = df['price'].sum()
@@ -107,7 +110,6 @@ class cal:
                         row['buy_stock'] = e_stock
                         row['buy_price'] = buy
                         fdf = fdf.append(row, ignore_index=True)
-
             if fdf.empty:
                 t_price = ndf.loc[0]['buy_price'] + total
                 h_stock = t_price / ndf.loc[0]['price']
@@ -118,9 +120,18 @@ class cal:
         ndf = pd.concat([ndf, fdf], ignore_index=True)
         return ndf
 
+    # TODO 优选单个股票
+    def single_choose_stock(self, choose_code_list: list = None, lines: int = None):
+        choose_df = self.realtime_stock(user_code_list=choose_code_list, lines=lines)
+        return choose_df
 
 if __name__ == '__main__':
-    dn = cal().cal_every_stock(36000)
-    total = dn['buy_price'].sum()
+    cal = cal()
+    dn = cal.choose_stock()
+    # code_list = dn['ts_code'].tolist()
+    # sdf = cal.choose_stock(code_list, lines=1)
     print(dn)
-    print(35000 - total)
+    # print(36000 - total)
+    # start = datetime.datetime.now()
+    # end = datetime.datetime.now()
+    # print('Running time: %s Seconds' % (end-start))
