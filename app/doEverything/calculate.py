@@ -1,5 +1,4 @@
 from app import config
-from app.bean import daily_b
 from app.tData.getStockData import get_skData
 import pandas as pd
 from app.tData.RedisDB import RedisBase
@@ -11,14 +10,12 @@ class cal:
 
     def __init__(self):
         """Redis 数据初始化，取股票基本数据"""
-        # self.stock_data = t_util.bytes_to_dataFrame(RedisBase().redis().get('stock_base'))
-        # self.daily_data = t_util.bytes_to_dataFrame(RedisBase().redis().get('stock_daily'))
         self.stock_details_daily = t_util.bytes_to_dataFrame(RedisBase().redis().get('stock_details_daily'))
         """高危版块"""
         self.list_industry = config.industry.split('|')
 
     # TODO 根据规则筛选并查询数据
-    def _filter(self, daily_data, user_ts_code_list: list = None):
+    def _filter(self, user_ts_code_list: list = None):
         dfNew = pd.DataFrame()
 
         """排除已选择的数据"""
@@ -46,7 +43,7 @@ class cal:
     # TODO 对数据进行排序
     def _sort(self, user_code_list: list = None, lines: int = None):
         # df.sort_index(by='pb', axis=0, ascending=[True])
-        df = self._filter(self.stock_details_daily, user_ts_code_list=user_code_list)
+        df = self._filter(user_ts_code_list=user_code_list)
         if df.empty is False:
             if lines is None:
                 max_lines = int(config.max_lines)
@@ -129,12 +126,30 @@ class cal:
         choose_df = self.realtime_stock(user_code_list=choose_code_list, lines=lines)
         return choose_df
 
+    # TODO 出售股票(单只股票判断)
+    def sale_stock(self, stock_df):
+        """
+            为了止损 首先判断单只股票净资产，当净资产翻倍，可以提示出售该股票
+            当股票购买的时间超过1年的投资期时可以抛售该股票
+        """
+        flag = ''
+        buy_bps = stock_df.iloc[0]['bps']
+        # 取数当前股票净资产
+        df = self.stock_details_daily[self.stock_details_daily['ts_code'] == stock_df.iloc[0]['ts_code']]
+        now_bps = df.iloc[0]['bps']
+        if now_bps >= (buy_bps * 2):
+            flag = 'X'
+
+        return flag
+
 if __name__ == '__main__':
     cal = cal()
     dn = cal.choose_stock()
+    dn = dn[dn['symbol'] == '000732']
     # code_list = dn['ts_code'].tolist()
     # sdf = cal.choose_stock(code_list, lines=1)
-    print(dn)
+    cdf = cal.sale_stock(dn)
+    print(cdf)
     # print(36000 - total)
     # start = datetime.datetime.now()
     # end = datetime.datetime.now()
