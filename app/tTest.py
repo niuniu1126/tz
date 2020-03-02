@@ -37,7 +37,7 @@ end = datetime.datetime.now()
 print('Running time: %s Seconds' % (end-start))
 
 # print(daily_data)
-print(stock_details_daily)
+print(tuShare.get_stock_basics())
 # print(daily_data)
 # r = 100 / 100
 # print(round(r))

@@ -27,8 +27,11 @@ def init_stock_daily_data():
 def init_stock_fi_data():
     # 股票每日基本数据
     daily_data = get_skData().get_stock_fi()
-    df_bytes = t_util.dataFrame_to_bytes(daily_data)
-    flag = RedisBase().redis().set('stock_fi', df_bytes)
+    if daily_data.empty is False:
+        df_bytes = t_util.dataFrame_to_bytes(daily_data)
+        flag = RedisBase().redis().set('stock_fi', df_bytes)
+    else:
+        flag = False
     return flag
 
 # TODO 初始化用户使用股票数据 需要每日更新
@@ -42,7 +45,8 @@ def init_stock_daily_user_details():
 # TODO 初始化个股基本情况 需要每日更新
 def init_everyday():
     flag_d = init_stock_daily_data()  # 每日指标
-    flag_f = init_stock_fi_data()  # 个股基本情况
+    flag_f = init_stock_fi_data()  # 个股基本情况 由于接口取值通信问题 暂不更新
+    # flag_f = False
     flag_u = init_stock_daily_user_details()  # 用户使用股票数据
     print(flag_d, '-----', flag_f, '-----', flag_u)
 
@@ -55,7 +59,8 @@ def _init_stock_daily_udata():
     stock_fi = t_util.bytes_to_dataFrame(RedisBase().redis().get('stock_fi'))
     for index, row in stock_base.iterrows():
         df = stock_daily[stock_daily['ts_code'] == row['ts_code']]
-        fdf = stock_fi.loc[row['symbol']]
+        if stock_fi.empty is False:
+            bvps = stock_fi.loc[row['symbol']]['bvps']
         if df.empty is False:
             daily_b.ts_code = str(row['ts_code'])  # 股票名称
             daily_b.name = str(row['name'])  # 股票名称
@@ -67,7 +72,10 @@ def _init_stock_daily_udata():
             daily_b.pe = float(df['pe'])  # 市盈率（总市值/净利润）
             daily_b.pe_ttm = float(df['pe_ttm'])  # 市盈率（TTM）
             daily_b.pb = float(df['pb'])  # 市净率（总市值/净资产）
-            daily_b.bps = float(fdf['bvps'])  # 每股净资产
+            if bvps is None:
+                daily_b.bps = float(0)  # 每股净资产
+            else:
+                daily_b.bps = float(bvps)  # 每股净资产
 
             data = {'ts_code': daily_b.ts_code, 'symbol': daily_b.symbol, 'name': daily_b.name,
                     'industry': daily_b.industry, 'trade_date': daily_b.trade_date, 'pe': daily_b.pe,
@@ -79,5 +87,5 @@ def _init_stock_daily_udata():
 
 
 if __name__ == '__main__':
-    print(init_stock_data())
+    # print(init_stock_data())
     init_everyday()

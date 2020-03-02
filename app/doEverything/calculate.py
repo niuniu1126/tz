@@ -1,16 +1,14 @@
 from app import config
+from app.appUtil import Util_tools
 from app.tData.getStockData import get_skData
 import pandas as pd
 from app.tData.RedisDB import RedisBase
-import app.appUtil.Util_tools as t_util
-import datetime
-
 
 class cal:
 
     def __init__(self):
         """Redis 数据初始化，取股票基本数据"""
-        self.stock_details_daily = t_util.bytes_to_dataFrame(RedisBase().redis().get('stock_details_daily'))
+        self.stock_details_daily = Util_tools.bytes_to_dataFrame(RedisBase().redis().get('stock_details_daily'))
         """高危版块"""
         self.list_industry = config.industry.split('|')
 
@@ -53,6 +51,12 @@ class cal:
             sort_title = config.sort_title.split('|')
             sort_type = config.sort_type.split('|')
             ndf = df.sort_values(by=sort_title, ascending=sort_type).head(max_lines)
+
+            stock_fi = Util_tools.bytes_to_dataFrame(RedisBase().redis().get('stock_fi'))
+            if stock_fi.empty:
+                for index, row in ndf.iterrows():
+                    sg_data = get_skData().get_stock_fi(row['ts_code'])
+                    ndf.loc[index, 'bps'] = float(sg_data['bps'])
         return ndf
 
     # TODO 对最终筛选股票
@@ -134,17 +138,22 @@ class cal:
         """
         flag = ''
         buy_bps = stock_df.iloc[0]['bps']
+        buy_data = stock_df.iloc[0]['trade_date']
         # 取数当前股票净资产
         df = self.stock_details_daily[self.stock_details_daily['ts_code'] == stock_df.iloc[0]['ts_code']]
         now_bps = df.iloc[0]['bps']
+        now_date = df.iloc[0]['trade_date']
+        days = Util_tools.time_long(buy_data, now_date)
         if now_bps >= (buy_bps * 2):
             flag = 'X'
-
+        elif days > 365:
+            flag = 'X'
         return flag
 
 if __name__ == '__main__':
     cal = cal()
     dn = cal.choose_stock()
+    print(dn)
     dn = dn[dn['symbol'] == '000732']
     # code_list = dn['ts_code'].tolist()
     # sdf = cal.choose_stock(code_list, lines=1)
