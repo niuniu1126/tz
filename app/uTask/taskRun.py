@@ -31,7 +31,7 @@ def stock_user_data_task():
     return tasks_id
 
 if __name__ == '__main__':
-    # r = stock_base_task()
+    r = stock_base_task()
     # print(r)
     r1 = stock_fi_data_task()
     print(r1)
