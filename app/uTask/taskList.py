@@ -15,21 +15,21 @@ def stock_base_stock_update(self):
     return flag
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=1 * 6)
-def stock_base_stock_daily_data():
+def stock_base_stock_daily_data(self):
     """各股每日指标"""
     try:
         flag_d = initData.init_stock_daily_data()
     except Exception as e:
-        raise stock_base_stock_daily_data.retry(exc=e, countdown=60)
+        raise self.retry(exc=e, countdown=60)
     return flag_d
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=1 * 6)
-def stock_base_stock_fi_data():
+def stock_base_stock_fi_data(self):
     """各股基本财务数据"""
     try:
         flag_f = initData.init_stock_fi_data()  # 个股基本情况 由于接口取值通信问题 暂不更新
     except Exception as e:
-        raise stock_base_stock_fi_data.retry(exc=e, countdown=60)
+        raise self.retry(exc=e, countdown=60)
     return flag_f
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=1 * 6)
