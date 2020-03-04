@@ -21,12 +21,14 @@ class cal:
             self.stock_details_daily = \
                 self.stock_details_daily[~self.stock_details_daily['ts_code'].isin(user_ts_code_list)]
 
-        for index, row in self.stock_details_daily.iterrows():
+        for idx, row in self.stock_details_daily.iterrows():
             """市净率选择"""
             if row['industry'] in self.list_industry:
                 bp_ulist = config.bh_.split(',')
+                row['Risk_level'] = '1'
             else:
                 bp_ulist = config.bf_.split(',')
+                row['Risk_level'] = '0'
 
             bp_low = float(bp_ulist[0])  # 市净率 最小值
             bp_high = float(bp_ulist[1])  # 市净率 最大值
@@ -41,6 +43,7 @@ class cal:
     # TODO 对数据进行排序
     def _sort(self, user_code_list: list = None, lines: int = None):
         # df.sort_index(by='pb', axis=0, ascending=[True])
+        ndf = pd.DataFrame()
         df = self._filter(user_ts_code_list=user_code_list)
         if df.empty is False:
             if lines is None:
@@ -50,13 +53,15 @@ class cal:
             """排序"""
             sort_title = config.sort_title.split('|')
             sort_type = config.sort_type.split('|')
+            sort_title.append('Risk_level')
+            sort_type.append('False')
             ndf = df.sort_values(by=sort_title, ascending=sort_type).head(max_lines)
 
             stock_fi = Util_tools.bytes_to_dataFrame(RedisBase().redis().get('stock_fi'))
-            if stock_fi.empty:
-                for index, row in ndf.iterrows():
+            if stock_fi.empty:  # 在线取每股净资产
+                for idx, row in ndf.iterrows():
                     sg_data = get_skData().get_stock_fi(row['ts_code'])
-                    ndf.loc[index, 'bps'] = float(sg_data['bps'])
+                    ndf.loc[idx, 'bps'] = float(sg_data['bps'])
         return ndf
 
     # TODO 对最终筛选股票
@@ -70,9 +75,9 @@ class cal:
         if df.empty is False:
             stock_list = df['symbol'].tolist()
             data = get_skData.get_realtime_stock(stock_list)
-            for index, cow in df.iterrows():
+            for idx, cow in df.iterrows():
                 now_data = data.loc[data['code'] == cow['symbol']]
-                df.loc[index, 'price'] = float(now_data['price'])
+                df.loc[idx, 'price'] = float(now_data['price'])
         return df
 
     # TODO 计算分配个股数量
@@ -152,13 +157,15 @@ class cal:
 
 if __name__ == '__main__':
     cal = cal()
-    dn = cal.choose_stock()
+    dn = cal.choose_stock(lines=30)
     print(dn)
-    dn = dn[dn['symbol'] == '000732']
+    # for index, rows in dn.iterrows():
+    #     print(rows)
+    # dn = dn[dn['symbol'] == '000732']
     # code_list = dn['ts_code'].tolist()
     # sdf = cal.choose_stock(code_list, lines=1)
-    cdf = cal.sale_stock(dn)
-    print(cdf)
+    # cdf = cal.sale_stock(dn)
+    # print(cdf)
     # print(36000 - total)
     # start = datetime.datetime.now()
     # end = datetime.datetime.now()

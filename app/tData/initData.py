@@ -26,11 +26,15 @@ def init_stock_daily_data():
 # TODO 初始化个股基本情况 需要每日更新
 def init_stock_fi_data():
     # 股票每日基本数据
-    daily_data = get_skData().get_stock_fi()
-    if daily_data.empty is False:
-        df_bytes = t_util.dataFrame_to_bytes(daily_data)
-        flag = RedisBase().redis().set('stock_fi', df_bytes)
-    else:
+    try:
+        daily_data = get_skData().get_stock_fi()
+        if daily_data.empty is False:
+            df_bytes = t_util.dataFrame_to_bytes(daily_data)
+            flag = RedisBase().redis().set('stock_fi', df_bytes)
+        else:
+            flag = False
+    except Exception as e:
+        print(e.args)
         flag = False
     return flag
 
@@ -46,7 +50,6 @@ def init_stock_daily_user_details():
 def init_everyday():
     flag_d = init_stock_daily_data()  # 每日指标
     flag_f = init_stock_fi_data()  # 个股基本情况 由于接口取值通信问题 暂不更新
-    # flag_f = False
     flag_u = init_stock_daily_user_details()  # 用户使用股票数据
     print(flag_d, '-----', flag_f, '-----', flag_u)
 

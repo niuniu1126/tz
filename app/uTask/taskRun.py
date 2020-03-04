@@ -29,11 +29,10 @@ def stock_fi_data_task():
     tasks_id = taskList.stock_base_stock_fi_data.delay()
     return tasks_id
 
-
 def stock_init_group():
     g_result = group(taskList.stock_base_stock_update.s(), taskList.stock_base_stock_daily_data.s(),
                      taskList.stock_base_stock_fi_data.s())
-    en = chain(g_result | taskList.stock_base_stock_user_data.s())
+    en = chain(g_result | taskList.stock_base_stock_user_data.s())()
     return en
 
 # TODO  整理用户使用股票数据格式 每日更新
@@ -43,5 +42,6 @@ def stock_user_data_task():
     return tasks_id
 
 if __name__ == '__main__':
-    result = stock_init_group()
+    # result = stock_init_group()
+    result = stock_user_data_task()
     print(result)
