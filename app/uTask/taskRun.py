@@ -17,13 +17,11 @@ def stock_base_task():
     tasks_id = taskList.stock_base_stock_update.delay()
     return tasks_id
 
-
 # TODO 更新各股每日指标 每日更新
 def stock_daily_data_task():
     """各股每日指标"""
     t_result = taskList.stock_base_stock_daily_data.delay()
     return t_result
-
 
 # TODO 更新各股财务数据 每日更新
 def stock_fi_data_task():
@@ -31,22 +29,20 @@ def stock_fi_data_task():
     tasks_id = taskList.stock_base_stock_fi_data.delay()
     return tasks_id
 
-
 def stock_init_group():
-    c_result = chain(taskList.stock_base_stock_update.s(), taskList.stock_base_stock_daily_data.s(),
-                     taskList.stock_base_stock_fi_data.s()).apply_async(priority=0)
-    return c_result
-
+    g_result = group(taskList.stock_base_stock_update.s(), taskList.stock_base_stock_daily_data.s(),
+                     taskList.stock_base_stock_fi_data.s())
+    en = chain(g_result)()
+    return en
 
 # TODO  整理用户使用股票数据格式 每日更新
 def stock_user_data_task():
     """用户使用股票数据"""
-    ts_result = taskList.stock_base_stock_user_data.apply_async(priority=3)
+    ts_result = taskList.stock_base_stock_user_data.apply_async()
     return ts_result
-
 
 if __name__ == '__main__':
     result = stock_init_group()
-    result2 = stock_user_data_task()
+    # result = stock_fi_data_task()
+    # result = stock_user_data_task()
     print(result)
-    print(result2)

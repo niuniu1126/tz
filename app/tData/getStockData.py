@@ -46,8 +46,8 @@ class get_skData:
         """公司每日基本情况"""
         df_data = pd.DataFrame()
         if ts_code is None:
-            if tr_date is None:
-                tr_date = self.default_day.strftime('%Y%m%d')
+            # if tr_date is None:
+            #     tr_date = self.default_day.strftime('%Y%m%d')
             try:
                 df_data = tushare.get_stock_basics(tr_date)
             except OSError:
@@ -69,10 +69,12 @@ class get_skData:
         return df_data
 
 if __name__ == '__main__':
-    df = tushare.get_stock_basics()
-    for idx, row in df.iterrows():
-        if idx == '000732':
-            print(row)
+    # df = tushare.get_stock_basics()
+    df = get_skData().get_stock_fi()
+    print(df)
+    # for idx, row in df.iterrows():
+        # if idx == '000732':
+        #     print(row)
 
     # tr_data = get_skData().stock_b()
     # tr_data = get_skData.get_realtime_stock('000732')

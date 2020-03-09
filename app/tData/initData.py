@@ -91,4 +91,6 @@ def _init_stock_daily_udata():
 
 if __name__ == '__main__':
     # print(init_stock_data())
-    init_everyday()
+    # print(init_stock_fi_data())
+    print(init_stock_fi_data())
+    # init_everyday()
