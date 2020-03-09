@@ -33,7 +33,7 @@ def stock_base_stock_fi_data(self):
     return flag_f
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=1 * 6)
-def stock_base_stock_user_data():
+def stock_base_stock_user_data(self):
     """用户使用股票数据"""
     flag_u = initData.init_stock_daily_user_details()  # 用户使用股票数据
     return flag_u

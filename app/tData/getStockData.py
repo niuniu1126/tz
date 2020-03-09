@@ -39,8 +39,8 @@ class get_skData:
         """股票每日财务指标数据"""
         if tr_date is None:
             tr_date = self.default_day
-        df = self.pro.query('fina_indicator', ts_code=ts_code, start_date=tr_date, end_date=tr_date)
-        return df
+        ndf = self.pro.query('fina_indicator', ts_code=ts_code, start_date=tr_date, end_date=tr_date)
+        return ndf
 
     def get_stock_fi(self, ts_code=None, tr_date=None):
         """公司每日基本情况"""
@@ -69,18 +69,24 @@ class get_skData:
         return df_data
 
 if __name__ == '__main__':
+    df = tushare.get_stock_basics()
+    for idx, row in df.iterrows():
+        if idx == '000732':
+            print(row)
+
     # tr_data = get_skData().stock_b()
-    # tr_data = get_skData.get_realtime_stock('000524')
+    # tr_data = get_skData.get_realtime_stock('000732')
     # tr_data = get_skData().daily_b(ts_code='000732.SZ')
+    # for idx, row in tr_data.iterrows():
+    #     print(row)
     # df = tushare.get_tick_data('000732', date='20200226', src='tt')
     # df2 = tr_data.drop_duplicates(subset=['industry'], keep='first')
     # for index, row in df2.iterrows():
     #     print(row['industry'])
-
     # print(tr_data.iloc[0]['price'])
     # data = get_skData().get_stock_fi('000732.SZ')
-    data = get_skData().get_stock_fi()
-    print(data)
+    # data = get_skData().get_stock_fi()
+    # print(data)
     # for index, row in data.iterrows():
     #     print(row)
     #     print(row['bps'])

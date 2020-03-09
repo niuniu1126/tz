@@ -34,8 +34,9 @@ class cal:
             bp_high = float(bp_ulist[1])  # 市净率 最大值
 
             if bp_low < row['pb'] < bp_high:  # 市盈率 市净率的10倍
-                pe_ttm_high = row['pb'] * 10
-                if 0 < row['pe_ttm'] < pe_ttm_high:
+                pe_ttm_high = float(row['pb'] * 10)
+                # if 0 < row['pe_ttm'] < pe_ttm_high:
+                if 0 < row['pe'] < pe_ttm_high:
                     """ignore_index=True,表示不按原来的索引，从0开始自动递增"""
                     dfNew = dfNew.append(row, ignore_index=True)
         return dfNew
@@ -45,6 +46,7 @@ class cal:
         # df.sort_index(by='pb', axis=0, ascending=[True])
         ndf = pd.DataFrame()
         df = self._filter(user_ts_code_list=user_code_list)
+
         if df.empty is False:
             if lines is None:
                 max_lines = int(config.max_lines)
@@ -55,7 +57,9 @@ class cal:
             sort_type = config.sort_type.split('|')
             sort_title.append('Risk_level')
             sort_type.append('False')
-            ndf = df.sort_values(by=sort_title, ascending=sort_type).head(max_lines)
+            df1 = df[df['Risk_level'] == '0'].sort_values(by=sort_title, ascending=sort_type).head(max_lines)
+            df2 = df[df['Risk_level'] == '1'].sort_values(by=sort_title, ascending=sort_type).head(max_lines)
+            ndf = pd.concat([df1, df2], ignore_index=True)
 
             stock_fi = Util_tools.bytes_to_dataFrame(RedisBase().redis().get('stock_fi'))
             if stock_fi.empty:  # 在线取每股净资产
@@ -86,7 +90,7 @@ class cal:
         ndf = pd.DataFrame()
         fdf = pd.DataFrame()
         df = self.realtime_stock(user_code_list=user_code_list, lines=lines)
-        df = df.drop(columns=['trade_date', 'pe'])
+        df = df.drop(columns=['trade_date'])
         """合计列"""
         sum_price = df['price'].sum()
         every_stock = total_money / sum_price
@@ -158,7 +162,8 @@ class cal:
 if __name__ == '__main__':
     cal = cal()
     dn = cal.choose_stock(lines=30)
-    print(dn)
+    for idx, row in dn.iterrows():
+        print(row)
     # for index, rows in dn.iterrows():
     #     print(rows)
     # dn = dn[dn['symbol'] == '000732']

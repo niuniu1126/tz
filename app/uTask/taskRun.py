@@ -38,8 +38,8 @@ def stock_init_group():
 # TODO  整理用户使用股票数据格式 每日更新
 def stock_user_data_task():
     """用户使用股票数据"""
-    tasks_id = taskList.stock_base_stock_user_data.delay()
-    return tasks_id
+    ts_result = taskList.stock_base_stock_user_data.delay()
+    return ts_result
 
 if __name__ == '__main__':
     # result = stock_init_group()
