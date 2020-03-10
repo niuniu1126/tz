@@ -162,8 +162,9 @@ class cal:
 if __name__ == '__main__':
     cal = cal()
     dn = cal.choose_stock(lines=30)
-    for idx, row in dn.iterrows():
-        print(row)
+    print(dn)
+    # for idx, row in dn.iterrows():
+    #     print(row)
     # for index, rows in dn.iterrows():
     #     print(rows)
     # dn = dn[dn['symbol'] == '000732']

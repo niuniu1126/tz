@@ -1,8 +1,6 @@
 import time
-
 from app.uTask import taskList
-from celery.result import AsyncResult
-from celery import Celery, chain, group
+import celery
 
 
 # 启动celery
@@ -30,19 +28,19 @@ def stock_fi_data_task():
     return tasks_id
 
 def stock_init_group():
-    g_result = group(taskList.stock_base_stock_update.s(), taskList.stock_base_stock_daily_data.s(),
-                     taskList.stock_base_stock_fi_data.s())
-    en = chain(g_result)()
-    return en
+    c_result = celery.chain(taskList.stock_base_stock_update.s(), taskList.stock_base_stock_daily_data.s(),
+                            taskList.stock_base_stock_fi_data.s()).apply_async(priority=0)
+    return c_result
 
 # TODO  整理用户使用股票数据格式 每日更新
 def stock_user_data_task():
     """用户使用股票数据"""
-    ts_result = taskList.stock_base_stock_user_data.apply_async()
+    ts_result = taskList.stock_base_stock_user_data.apply_async(priority=3)
     return ts_result
 
 if __name__ == '__main__':
-    result = stock_init_group()
-    # result = stock_fi_data_task()
+    # result = stock_init_group()
     # result = stock_user_data_task()
+    result = taskList.init_base_stock_data
     print(result)
+
