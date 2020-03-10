@@ -44,7 +44,7 @@ def init_base_stock_data(self):
     try:
         flag = initData.init_stock_data()
         flag_d = initData.init_stock_daily_data()
-        flag_u = initData.init_stock_daily_user_details()  # 用户使用股票数据
+        flag_f = initData.init_stock_fi_data()  # 用户使用股票数据
     except Exception as e:
         raise self.retry(exc=e, countdown=60)
-    print('init_stock_data', flag, '-------', 'init_stock_daily_data', flag_d, 'init_stock_daily_user_details', flag_u)
+    print('init_stock_data', flag, '-------', 'init_stock_daily_data', flag_d, '-------', 'init_stock_fi_data', flag_f)
