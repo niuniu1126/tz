@@ -92,5 +92,9 @@ def _init_stock_daily_udata():
 if __name__ == '__main__':
     # print(init_stock_data())
     # print(init_stock_fi_data())
-    print(init_stock_fi_data())
+    # print(init_stock_fi_data())
+    stock_base = t_util.bytes_to_dataFrame(RedisBase().redis().get('stock_base'))
+    df = stock_base.drop_duplicates(['industry'])
+    for index, row in df.iterrows():
+        print(row['industry'])
     # init_everyday()

@@ -1,7 +1,7 @@
 token = 'dc2e195f490118cfcf3c705c3a18ce4dc91eebc4a2e01c80adb04c29'
 
 # 高危版块
-industry = '银行|全国地产|区域地产|证券|保险'
+industry = '银行|全国地产|区域地产|证券|保险|普钢|煤炭开采|特种钢'
 
 # 筛选股票数量
 max_lines = 20

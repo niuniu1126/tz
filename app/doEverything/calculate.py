@@ -4,6 +4,7 @@ from app.tData.getStockData import get_skData
 import pandas as pd
 from app.tData.RedisDB import RedisBase
 
+
 class cal:
 
     def __init__(self):
@@ -33,10 +34,10 @@ class cal:
             bp_low = float(bp_ulist[0])  # 市净率 最小值
             bp_high = float(bp_ulist[1])  # 市净率 最大值
 
-            if bp_low < row['pb'] < bp_high:  # 市盈率 市净率的10倍
-                pe_ttm_high = float(row['pb'] * 10)
-                # if 0 < row['pe_ttm'] < pe_ttm_high:
-                if 0 < row['pe'] < pe_ttm_high:
+            if bp_low < row['pb'] < bp_high:
+                pe_ttm_high = float(row['pb'] * 10)  # 市盈率 市净率的10倍
+                if 0 < row['pe_ttm'] < pe_ttm_high:
+                    # if 0 < row['pe'] < pe_ttm_high:
                     """ignore_index=True,表示不按原来的索引，从0开始自动递增"""
                     dfNew = dfNew.append(row, ignore_index=True)
         return dfNew
@@ -158,6 +159,7 @@ class cal:
         elif days > 365:
             flag = 'X'
         return flag
+
 
 if __name__ == '__main__':
     cal = cal()
